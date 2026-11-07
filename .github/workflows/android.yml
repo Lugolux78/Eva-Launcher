@@ -17,12 +17,20 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Confirm preinstalled Android SDK
+      - name: Locate Android SDK manager and install platform
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
-          command -v sdkmanager
-      - name: Install Android SDK 35
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          SDKMANAGER=$(find "$ANDROID_HOME" -name sdkmanager -type f | head -n 1)
+          if [ -z "$SDKMANAGER" ]; then
+            echo "Android SDK manager not found; fetching command line tools"
+            curl -fsSL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o /tmp/cmdtools.zip
+            mkdir -p "$ANDROID_HOME/cmdline-tools/latest"
+            unzip -q /tmp/cmdtools.zip -d /tmp/android-cmdline
+            mv /tmp/android-cmdline/cmdline-tools/* "$ANDROID_HOME/cmdline-tools/latest/"
+            SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
       - name: Install Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
