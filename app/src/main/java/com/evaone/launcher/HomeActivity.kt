@@ -177,12 +177,12 @@ private fun EvaOne(
                 val name = clean.substring(prefix.length).trim()
                 val app = apps.firstOrNull { it.name.equals(name, ignoreCase = true) }
                     ?: apps.firstOrNull { it.name.contains(name, ignoreCase = true) && name.isNotBlank() }
-                if (app != null) { launch(app); aiReply = "\${app.name} wordt geopend." }
+                if (app != null) { launch(app); aiReply = "${app.name} wordt geopend." }
                 else aiReply = "Ik kan die app niet vinden. Kijk bij Alle apps."
             }
             low.contains("instelling") -> openSettings()
             low.contains("alle apps") || low.contains("app overzicht") -> { query = ""; page = "apps" }
-            low.contains("hoe laat") -> aiReply = "Het is \${time.format(DateTimeFormatter.ofPattern("HH:mm"))}."
+            low.contains("hoe laat") -> aiReply = "Het is ${time.format(DateTimeFormatter.ofPattern("HH:mm"))}."
             low.contains("datum") -> aiReply = time.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("nl-NL")))
             else -> aiReply = "In deze testversie kan ik apps openen en navigeren. Cloud-AI volgt later, met jouw toestemming."
         }
@@ -456,7 +456,7 @@ private fun AppDrawer(
         Spacer(Modifier.height(20.dp))
         Text("Apps & zoeken", color = p.ink, fontWeight = FontWeight.SemiBold, fontSize = 29.sp)
         Spacer(Modifier.height(5.dp))
-        Text("\${apps.size} apps  ·  alles binnen één swipe", color = p.muted, fontSize = 13.sp)
+        Text("${apps.size} apps  ·  alles binnen één swipe", color = p.muted, fontSize = 13.sp)
         Spacer(Modifier.height(22.dp))
         GlassCard(p, Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
