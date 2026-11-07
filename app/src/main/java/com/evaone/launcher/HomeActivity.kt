@@ -69,7 +69,7 @@ class HomeActivity : ComponentActivity() {
 @Composable
 private fun EvaLauncher(launch: (LaunchApp) -> Unit, requestHome: () -> Unit) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("eva", MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("eva", android.content.Context.MODE_PRIVATE) }
     var light by remember { mutableStateOf(prefs.getBoolean("light", false)) }
     val fg = if (light) Color(0xFF142335) else Color(0xFFF2F7FF)
     val secondary = if (light) Color(0xFF66758A) else Color(0xFFAABBCD)
