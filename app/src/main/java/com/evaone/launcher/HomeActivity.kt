@@ -60,7 +60,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private data class LaunchApp(val name: String, val component: ComponentName)
-private data class EvaPalette(
+internal data class EvaPalette(
     val base: Color, val ink: Color, val muted: Color, val card: Color,
     val cardEnd: Color, val line: Color, val accent: Color, val violet: Color,
     val dark: Boolean
@@ -85,6 +85,7 @@ private fun palette(isLight: Boolean, tint: Int): EvaPalette {
 class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val atmos = AtmosBridge(this)
         setContent {
             EvaOne(
                 launch = { app ->
@@ -100,7 +101,8 @@ class HomeActivity : ComponentActivity() {
                         startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
                     }
                 },
-                openSettings = { startActivity(Intent(Settings.ACTION_SETTINGS)) }
+                openSettings = { startActivity(Intent(Settings.ACTION_SETTINGS)) },
+                atmos = atmos
             )
         }
     }
@@ -110,7 +112,8 @@ class HomeActivity : ComponentActivity() {
 private fun EvaOne(
     launch: (LaunchApp) -> Unit,
     setHome: () -> Unit,
-    openSettings: () -> Unit
+    openSettings: () -> Unit,
+    atmos: AtmosBridge
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("eva_one_v2", Context.MODE_PRIVATE) }
@@ -218,7 +221,7 @@ private fun EvaOne(
                             onOpenApps = { query = ""; page = "apps" },
                             onEva = { page = "eva" },
                             onStudio = { page = "studio" },
-                            onLaunch = launch, onPin = ::toggleDock
+                            onLaunch = launch, onPin = ::toggleDock, atmos = atmos
                         )
                     }
                 }
@@ -317,7 +320,8 @@ private fun HomeDashboard(
     p: EvaPalette, dateTime: LocalDateTime, battery: Int,
     dock: List<LaunchApp>, showQuick: Boolean,
     onOpenApps: () -> Unit, onEva: () -> Unit, onStudio: () -> Unit,
-    onLaunch: (LaunchApp) -> Unit, onPin: (LaunchApp) -> Unit
+    onLaunch: (LaunchApp) -> Unit, onPin: (LaunchApp) -> Unit,
+    atmos: AtmosBridge
 ) {
     val hour = dateTime.hour
     val greeting = when (hour) { in 5..11 -> "GOEDEMORGEN"; in 12..17 -> "GOEDEMIDDAG"; else -> "GOEDENAVOND" }
@@ -349,7 +353,9 @@ private fun HomeDashboard(
             Text(if (battery >= 0) "ϟ $battery%" else "◌ --%",
                 color = p.accent, fontSize = 14.sp, fontWeight = FontWeight.Medium)
         }
-        Spacer(Modifier.height(31.dp))
+        Spacer(Modifier.height(20.dp))
+        AtmosWeatherCard(p, atmos)
+        Spacer(Modifier.height(19.dp))
         GlassCard(p, Modifier.fillMaxWidth().clickable(onClick = onEva)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("✦", fontSize = 24.sp, color = p.accent)
