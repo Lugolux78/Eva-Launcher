@@ -46,7 +46,7 @@ import java.util.Locale
 private val Cyan = Color(0xFF65E6EF)
 private val Violet = Color(0xFFAF90FF)
 private data class LaunchApp(val name: String, val component: ComponentName)
-private val appSort = compareBy<LaunchApp>(String.CASE_INSENSITIVE_ORDER) { it.name }
+
 
 class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,7 +89,7 @@ private fun EvaLauncher(launch: (LaunchApp) -> Unit, requestHome: () -> Unit) {
         @Suppress("DEPRECATION")
         apps = pm.queryIntentActivities(intent, 0).mapNotNull { it.activityInfo?.let { a ->
             LaunchApp(it.loadLabel(pm).toString(), ComponentName(a.packageName, a.name))
-        } }.distinctBy { it.component.flattenToString() }.sortedWith(appSort)
+        } }.distinctBy { it.component.flattenToString() }.sortedBy { it.name.lowercase(Locale.ROOT) }
         if (favoriteKeys.isEmpty()) {
             val preferred = listOf("com.whatsapp", "com.google.android.gm", "com.android.chrome", "com.google.android.apps.maps", "com.sec.android.app.camera")
             favoriteKeys = (preferred.mapNotNull { p -> apps.firstOrNull { it.component.packageName == p }?.component?.flattenToString() } +
