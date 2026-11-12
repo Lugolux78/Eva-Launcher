@@ -1,0 +1,29 @@
+name: Build EVA Radio APK
+on:
+  push:
+    paths:
+      - 'eva-radio/**'
+      - '.github/workflows/build-radio-apk.yml'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compile debug APK
+        working-directory: eva-radio
+        run: gradle --no-daemon :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EVA-Radio-Tech-APK
+          path: eva-radio/app/build/outputs/apk/debug/app-debug.apk
