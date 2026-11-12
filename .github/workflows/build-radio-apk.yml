@@ -1,32 +1,76 @@
-name: Build EVA Radio APK
+name: Build Evadio Walkman APK
 on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - eva-radio-tech-v01
   push:
+    branches:
+      - evadio-walkman-v03
     paths:
       - 'eva-radio/**'
       - '.github/workflows/build-radio-apk.yml'
-  workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Confirm Android SDK
+      - name: Use preinstalled GitHub runner Android SDK
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
           ls "$ANDROID_HOME/platforms" || true
+      - name: Install Android API 35
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Compile debug APK
+      - name: Download original Walkman artwork
+        shell: bash
+        run: |
+          mkdir -p eva-radio/app/src/main/res/drawable-nodpi
+          if [ ! -s eva-radio/app/src/main/res/drawable-nodpi/walkman_shell.png ]; then
+            curl --fail --location --retry 4 --connect-timeout 15 'https://pikaso.cdnpk.net/private/production/6024771996/3863082505.png?token=exp=1794700800~hmac=162d9a0d0f858bb6a6f2bbe95065258f6978e34bf6cc16865e40e07b348b8d18' -o eva-radio/app/src/main/res/drawable-nodpi/walkman_shell.png
+          fi
+          file eva-radio/app/src/main/res/drawable-nodpi/walkman_shell.png
+      - name: Build signed debug APK
         working-directory: eva-radio
-        run: gradle --no-daemon :app:assembleDebug
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify APK
+        run: test -s eva-radio/app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EVA-Radio-Tech-APK
+          name: Evadio-Walkman-v0.3-APK
           path: eva-radio/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - name: Save APK and artwork in repository for direct installation
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p evadio-builds
+          cp eva-radio/app/build/outputs/apk/debug/app-debug.apk evadio-builds/Evadio-Walkman-v0.3.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f evadio-builds/Evadio-Walkman-v0.3.apk
+          git add eva-radio/app/src/main/res/drawable-nodpi/walkman_shell.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish installable Evadio Walkman v0.3"
+            git push origin HEAD:evadio-walkman-v03 || true
+          fi
+      - name: Save artwork in repository for future builds
+        continue-on-error: true
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add eva-radio/app/src/main/res/drawable-nodpi/walkman_shell.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Add Evadio Walkman artwork asset"
+            git push origin HEAD:evadio-walkman-v03 || true
+          fi
