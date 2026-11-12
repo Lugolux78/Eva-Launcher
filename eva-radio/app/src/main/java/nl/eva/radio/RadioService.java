@@ -53,7 +53,7 @@ public final class RadioService extends Service {
             @Override public void onPause() { pausePlayback(); }
             @Override public void onStop() { stopPlayback(); }
         });
-        mediaSession.setActive(true;
+        mediaSession.setActive(true);
         // Eén audiofocusverzoek per servicesessie: geen pauze bij zenderwissels.
         AudioAttributes focusAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
