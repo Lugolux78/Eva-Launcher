@@ -44,6 +44,20 @@ jobs:
           name: Evadio-Walkman-v0.3-APK
           path: eva-radio/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      - name: Save APK and artwork in repository for direct installation
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p evadio-builds
+          cp eva-radio/app/build/outputs/apk/debug/app-debug.apk evadio-builds/Evadio-Walkman-v0.3.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f evadio-builds/Evadio-Walkman-v0.3.apk
+          git add eva-radio/app/src/main/res/drawable-nodpi/walkman_shell.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish installable Evadio Walkman v0.3"
+            git push origin HEAD:evadio-walkman-v03 || true
+          fi
       - name: Save artwork in repository for future builds
         continue-on-error: true
         shell: bash
