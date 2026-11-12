@@ -8,7 +8,7 @@ import android.view.*;
 public final class WalkmanView extends View {
     private static final float W=1672,H=941;
     public interface Controller {
-        void onPlayPause(); void onStop(); void onNext(); void onPrevious();
+        void onPlayPause(); void onStopPlayback(); void onNext(); void onPrevious();
         void onBrowse(boolean favorites); void onSettings(); void onVolume(float fraction);
     }
     private final Controller controller;
@@ -156,7 +156,7 @@ public final class WalkmanView extends View {
             if(hit(x,y,427,690,654,860)||hit(x,y,1284,345,1365,460)){controller.onPrevious();return true;}
             if(hit(x,y,1139,690,1389,860)||hit(x,y,1518,345,1600,460)){controller.onNext();return true;}
             if(hit(x,y,652,690,925,860)){controller.onPlayPause();return true;}
-            if(hit(x,y,927,690,1140,860)){controller.onStop();return true;}
+            if(hit(x,y,927,690,1140,860)){controller.onStopPlayback();return true;}
             if(hit(x,y,1270,214,1608,343)){controller.onBrowse(true);return true;}
             if(hit(x,y,1360,345,1518,460)){controller.onBrowse(false);return true;}
             if(hit(x,y,120,70,480,205)){controller.onSettings();return true;}
