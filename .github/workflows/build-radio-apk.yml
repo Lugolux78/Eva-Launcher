@@ -1,6 +1,9 @@
 name: Build Evadio Walkman APK
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - eva-radio-tech-v01
   push:
     branches:
       - evadio-walkman-v03
