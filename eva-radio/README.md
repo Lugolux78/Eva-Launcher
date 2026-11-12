@@ -36,9 +36,15 @@ De app vraagt geen locatie- of accounttoegang. Zenderzoekopdrachten gaan naar Ra
 ## Licentie
 Projectbroncode voor eigen gebruik; rechten op stationsnamen, logo's en uitzendingen berusten bij de betreffende rechthebbenden.
 
-## Versie 0.2
-- Appnaam **Evadio**.
-- Eén audiofocusverzoek tijdens afspelen, ook bij het wisselen van station.
-- Nieuwe stream start automatisch.
+## Gewijzigd in 0.2
+- Naam en meldingen: **Evadio**.
+- Eén AudioFocusRequest blijft behouden bij zenderwissels.
+- Elke selectie vervangt de actieve stream en start de gekozen zender.
+- Versienummer: 0.2.0-tech.
 
-De GitHub-build bevestigt compilatie; testen van zenderwissels op Android is nog noodzakelijk.
+**Tests:** broncode is aangepast; deze werkomgeving bevat geen Android SDK.
+De Android-build en zenderwissels op een echt toestel zijn nog niet geverifieerd.
+
+## 0.3 buildfix
+Fixed the WalkmanView.Controller method signature to `onStopPlayback()` so the UI and Android Activity can compile.
+Source code includes one real audio service, station selection, favorites, landscape skin and drawable. To install, a signed APK must be built.
