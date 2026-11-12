@@ -1,4 +1,4 @@
-# EVA Radio – Tech Edition 0.1
+# Evadio – Tech Edition 0.2
 
 Een **native Android-radioapp**. Eerst de techniek; alle skins volgen daarna onafhankelijk.
 
@@ -35,3 +35,10 @@ De app vraagt geen locatie- of accounttoegang. Zenderzoekopdrachten gaan naar Ra
 
 ## Licentie
 Projectbroncode voor eigen gebruik; rechten op stationsnamen, logo's en uitzendingen berusten bij de betreffende rechthebbenden.
+
+## Versie 0.2
+- Appnaam **Evadio**.
+- Eén audiofocusverzoek tijdens afspelen, ook bij het wisselen van station.
+- Nieuwe stream start automatisch.
+
+De GitHub-build bevestigt compilatie; testen van zenderwissels op Android is nog noodzakelijk.

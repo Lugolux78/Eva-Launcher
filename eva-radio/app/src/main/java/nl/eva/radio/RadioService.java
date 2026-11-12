@@ -32,9 +32,10 @@ public final class RadioService extends Service {
 
     private AudioManager audioManager;
     private AudioFocusRequest audioRequest;
+    private boolean hasAudioFocus;
     private MediaPlayer player;
     private MediaSession mediaSession;
-    private String stationName = "EVA Radio";
+    private String stationName = "Evadio";
     private String stationUrl = "";
     private String status = "Gestopt";
     private boolean playing;
@@ -46,13 +47,28 @@ public final class RadioService extends Service {
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(
                 new NotificationChannel(CHANNEL, "Radio afspelen", NotificationManager.IMPORTANCE_LOW));
-        mediaSession = new MediaSession(this, "EVA Radio");
+        mediaSession = new MediaSession(this, "Evadio");
         mediaSession.setCallback(new MediaSession.Callback() {
             @Override public void onPlay() { togglePlayback(true); }
             @Override public void onPause() { pausePlayback(); }
             @Override public void onStop() { stopPlayback(); }
         });
-        mediaSession.setActive(true);
+        mediaSession.setActive(true;
+        // Eén audiofocusverzoek per servicesessie: geen pauze bij zenderwissels.
+        AudioAttributes focusAttributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build();
+        audioRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(focusAttributes)
+                .setOnAudioFocusChangeListener(change -> {
+                    if (change == AudioManager.AUDIOFOCUS_LOSS ||
+                            change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                        if (change == AudioManager.AUDIOFOCUS_LOSS) hasAudioFocus = false;
+                        pausePlayback();
+                    } else if (change == AudioManager.AUDIOFOCUS_GAIN) {
+                        hasAudioFocus = true;
+                    }
+                }).build();
         publish();
     }
 
@@ -98,15 +114,10 @@ public final class RadioService extends Service {
     }
 
     private boolean requestFocus() {
-        AudioAttributes attributes = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build();
-        audioRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setAudioAttributes(attributes)
-                .setOnAudioFocusChangeListener(change -> {
-                    if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) pausePlayback();
-                }).build();
-        return audioManager.requestAudioFocus(audioRequest) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        if (hasAudioFocus) return true;
+        hasAudioFocus = audioManager.requestAudioFocus(audioRequest)
+                == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        return hasAudioFocus;
     }
 
     private void playNewStream() {
@@ -121,7 +132,7 @@ public final class RadioService extends Service {
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
             next.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             Map<String, String> headers = new HashMap<>();
-            headers.put("User-Agent", "EVA-Radio/0.1 (Android)");
+            headers.put("User-Agent", "Evadio/0.2 (Android)");
             next.setDataSource(getApplicationContext(), android.net.Uri.parse(stationUrl), headers);
             next.setOnPreparedListener(mp -> {
                 if (mp != player) return;
@@ -165,6 +176,7 @@ public final class RadioService extends Service {
         releasePlayer();
         playing = false; buffering = false; status = "Gestopt";
         if (audioRequest != null) audioManager.abandonAudioFocusRequest(audioRequest);
+        hasAudioFocus = false;
         publish();
         if (foreground) { stopForeground(STOP_FOREGROUND_REMOVE); foreground = false; }
         stopSelf();
@@ -187,7 +199,7 @@ public final class RadioService extends Service {
         if (mediaSession != null) {
             mediaSession.setMetadata(new MediaMetadata.Builder()
                     .putString(MediaMetadata.METADATA_KEY_TITLE, stationName)
-                    .putString(MediaMetadata.METADATA_KEY_ARTIST, "EVA Radio • Live").build());
+                    .putString(MediaMetadata.METADATA_KEY_ARTIST, "Evadio • Live").build());
             int state = buffering ? PlaybackState.STATE_BUFFERING :
                     playing ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED;
             mediaSession.setPlaybackState(new PlaybackState.Builder()
@@ -236,6 +248,7 @@ public final class RadioService extends Service {
     @Override public void onDestroy() {
         releasePlayer();
         if (audioRequest != null) audioManager.abandonAudioFocusRequest(audioRequest);
+        hasAudioFocus = false;
         if (mediaSession != null) { mediaSession.setActive(false); mediaSession.release(); }
         super.onDestroy();
     }

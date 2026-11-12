@@ -114,9 +114,9 @@ public final class MainActivity extends Activity {
         root.setBackgroundColor(Skin.BACKGROUND);
         setContentView(root);
 
-        TextView title = text("EVA RADIO", 29, true);
+        TextView title = text("EVADIO", 29, true);
         root.addView(title);
-        TextView sub = text("TECH EDITION 01  •  LIVE INTERNETRADIO", 11, false);
+        TextView sub = text("TECH EDITION 02  •  LIVE INTERNETRADIO", 11, false);
         sub.setTextColor(Skin.MUTED);
         root.addView(sub);
 

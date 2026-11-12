@@ -38,7 +38,7 @@ public final class StationRepository {
                 HttpURLConnection connection = null;
                 try {
                     connection = (HttpURLConnection) new URL(mirror + path).openConnection();
-                    connection.setRequestProperty("User-Agent", "EVA-Radio/0.1 (Android; station directory)");
+                    connection.setRequestProperty("User-Agent", "Evadio/0.2 (Android; station directory)");
                     connection.setRequestProperty("Accept", "application/json");
                     connection.setConnectTimeout(6000);
                     connection.setReadTimeout(10000);
