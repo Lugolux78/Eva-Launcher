@@ -85,7 +85,7 @@ public final class MainActivity extends Activity implements WalkmanView.Controll
         else if(selected!=null)play(selected);
         else onBrowse(false);
     }
-    @Override public void onStop(){startService(new Intent(this,RadioService.class).setAction(RadioService.STOP));}
+    @Override public void onStopPlayback(){startService(new Intent(this,RadioService.class).setAction(RadioService.STOP));}
     private void skip(int dir){
         if(stations.isEmpty()){onBrowse(false);return;}
         int idx=-1;
