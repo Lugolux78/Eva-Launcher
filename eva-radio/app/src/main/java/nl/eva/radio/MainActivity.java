@@ -69,7 +69,8 @@ public final class MainActivity extends Activity {
     @Override protected void onStart() {
         super.onStart();
         IntentFilter filter = new IntentFilter(RadioService.STATE_CHANGED);
-        registerReceiver(stateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(stateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        else registerReceiver(stateReceiver, filter);
         registered = true;
         startService(new Intent(this, RadioService.class).setAction(RadioService.STATUS));
     }
