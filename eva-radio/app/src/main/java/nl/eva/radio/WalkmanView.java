@@ -128,7 +128,7 @@ public final class WalkmanView extends View {
         drawCassetteLabel(c);
         drawVolume(c);
         drawFavoriteCount(c);
-        drawEject(c);
+        drawTransportDeck(c);
         c.restore();
     }
 
@@ -296,43 +296,117 @@ private void drawVolume(Canvas c) {
     }
 
 
-    private void drawEject(Canvas c) {
-        // De vijfde knop sluit aan op de originele transportknoppen;
-        // hetzelfde metallic oppervlak, dezelfde basishoogte en schaduw.
+
+    /**
+     * Eén cassette-transportdeksel met vijf identieke, fysieke toetsen.
+     * De vier oorspronkelijke toetsen zijn onderdeel van de foto; de hele
+     * uitsparing wordt daarom opnieuw getekend om één consistent ontwerp
+     * te krijgen in plaats van een losse EJECT-knop.
+     */
+    private void drawTransportDeck(Canvas c) {
         paint.reset(); paint.setAntiAlias(true);
-        paint.setColor(0xff0c0b0b);
-        c.drawRoundRect(new RectF(1370, 699, 1613, 856), 18, 18, paint);
+        paint.setColor(0xff120f0e);
+        c.drawRoundRect(new RectF(433, 689, 1615, 867), 24, 24, paint);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(3f);
-        paint.setColor(0xff4b4440);
-        c.drawRoundRect(new RectF(1373, 702, 1610, 854), 18, 18, paint);
+        paint.setStrokeWidth(4);
+        paint.setColor(0xff675a50);
+        c.drawRoundRect(new RectF(435, 691, 1613, 865), 23, 23, paint);
+        paint.setColor(0xffab9b89);
+        paint.setStrokeWidth(1.5f);
+        c.drawRoundRect(new RectF(439, 696, 1608, 860), 20, 20, paint);
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0xff0a090a);
-        c.drawRoundRect(new RectF(1383, 710, 1601, 845), 16, 16, paint);
-        paint.setShader(new LinearGradient(1392, 717, 1392, 829,
-                new int[]{0xffded5c9, 0xffb6aea4, 0xff938b82, 0xffc2b6a7, 0xff716b63},
+        paint.setShader(new LinearGradient(440, 699, 440, 857,
+                new int[]{0xff080707, 0xff1c1614, 0xff0a0807, 0xff100c0b},
                 null, Shader.TileMode.CLAMP));
-        c.drawRoundRect(new RectF(1391, 717, 1593, 832), 13, 13, paint);
+        c.drawRoundRect(new RectF(442, 699, 1607, 857), 19, 19, paint);
         paint.setShader(null);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(2f);
-        paint.setColor(0xffe3d9cb);
-        c.drawLine(1403, 721, 1580, 721, paint);
-        paint.setColor(0xff524a42);
-        c.drawLine(1403, 830, 1580, 830, paint);
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0xff282521);
-        Path icon = new Path();
-        icon.moveTo(1492, 743); icon.lineTo(1518, 777);
-        icon.lineTo(1466, 777); icon.close();
-        c.drawPath(icon, paint);
-        paint.setStrokeWidth(5f);
-        c.drawLine(1463, 786, 1521, 786, paint);
-        paint.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
-        paint.setTextSize(23f);
-        c.drawText("EJECT", 1457, 815, paint);
+        for (int i = 0; i < 5; i++) {
+            drawTransportButton(c, 453f + i * 231f, i);
+        }
     }
 
+    private void drawTransportButton(Canvas c, float x, int type) {
+        float y = 709f, width = 220f, height = 139f;
+        paint.reset(); paint.setAntiAlias(true);
+        // Donkere, verzonken toetsgleuf en buitenrand.
+        paint.setColor(0xff070605);
+        c.drawRoundRect(new RectF(x - 3, y - 2, x + width + 3, y + height + 4),
+                17, 17, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2f);
+        paint.setColor(0xff655d55);
+        c.drawRoundRect(new RectF(x, y, x + width, y + height), 14, 14, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        // In alle vijf toetsen exact hetzelfde geborsteld metalen reliëf.
+        paint.setShader(new LinearGradient(x + 9, y + 10, x + 9, y + height - 10,
+                new int[]{0xfff3e5d5, 0xffc5b9ac, 0xffaaa195, 0xffd1c5b6, 0xff80776d},
+                null, Shader.TileMode.CLAMP));
+        c.drawRoundRect(new RectF(x + 9, y + 9, x + width - 9, y + height - 10),
+                11, 11, paint);
+        paint.setShader(null);
+        paint.setStrokeWidth(2f);
+        paint.setColor(0x88fff4e6);
+        c.drawLine(x + 19, y + 12, x + width - 19, y + 12, paint);
+        paint.setColor(0x88554742);
+        c.drawLine(x + 19, y + height - 14, x + width - 19, y + height - 14, paint);
+
+        // Subtiele horizontale materiaalstructuur; geen tekst.
+        paint.setStrokeWidth(1f);
+        for (int k = 0; k < 15; k++) {
+            float ly = y + 19 + k * 7f;
+            paint.setColor((k % 3 == 0) ? 0x20736657 : 0x18ffffff);
+            c.drawLine(x + 18, ly, x + width - 18, ly, paint);
+        }
+
+        float cx = x + width / 2f;
+        float cy = y + height / 2f - 1f;
+        paint.setColor(0x50201a16);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setShadowLayer(1.5f, 0, 1.3f, 0x70201b18);
+        if (type == 0 || type == 3) {
+            boolean reverse = type == 0;
+            drawTransportTriangle(c, cx + (reverse ? 16 : -16), cy, reverse, false);
+            drawTransportTriangle(c, cx + (reverse ? -16 : 16), cy, reverse, false);
+        } else if (type == 1) {
+            if (playing || buffering) {
+                c.drawRoundRect(new RectF(cx - 22, cy - 23, cx - 8, cy + 23), 2, 2, paint);
+                c.drawRoundRect(new RectF(cx + 8, cy - 23, cx + 22, cy + 23), 2, 2, paint);
+            } else {
+                drawTransportTriangle(c, cx, cy, false, true);
+            }
+        } else if (type == 2) {
+            c.drawRoundRect(new RectF(cx - 22, cy - 22, cx + 22, cy + 22), 2, 2, paint);
+        } else {
+            // EJECT: enkel het traditionele driehoek-met-streep-icoon.
+            Path tri = new Path();
+            tri.moveTo(cx, cy - 26);
+            tri.lineTo(cx - 27, cy + 9);
+            tri.lineTo(cx + 27, cy + 9);
+            tri.close();
+            c.drawPath(tri, paint);
+            paint.setStrokeWidth(5f);
+            c.drawRoundRect(new RectF(cx - 28, cy + 20, cx + 28, cy + 25), 1, 1, paint);
+        }
+        paint.clearShadowLayer();
+    }
+
+    private void drawTransportTriangle(Canvas c, float cx, float cy,
+                                       boolean left, boolean large) {
+        float half = large ? 28f : 21f;
+        Path tri = new Path();
+        if (left) {
+            tri.moveTo(cx - half, cy);
+            tri.lineTo(cx + half, cy - half);
+            tri.lineTo(cx + half, cy + half);
+        } else {
+            tri.moveTo(cx + half, cy);
+            tri.lineTo(cx - half, cy - half);
+            tri.lineTo(cx - half, cy + half);
+        }
+        tri.close();
+        c.drawPath(tri, paint);
+    }
 
     private void drawFavoriteCount(Canvas c) {
         // Onder Favorites alleen het label; geen teller op de cassettebehuizing.
@@ -373,20 +447,22 @@ private void drawVolume(Canvas c) {
             }
             performClick();
             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
-            if (inside(x, y, 1384, 704, 1606, 852)) {
-                controller.onEject(); return true;
+
+            // De aanraakzones volgen exact dezelfde vijf knoppen als de tekening.
+            if (inside(x, y, 442, 699, 1607, 857)) {
+                int key = Math.max(0, Math.min(4, (int) ((x - 448f) / 231f)));
+                if (key == 0) controller.onPrevious();
+                else if (key == 1) controller.onPlayPause();
+                else if (key == 2) controller.onStopPlayback();
+                else if (key == 3) controller.onNext();
+                else controller.onEject();
+                return true;
             }
-            if (inside(x, y, 427, 690, 654, 860) || inside(x, y, 1284, 345, 1365, 460)) {
+            if (inside(x, y, 1284, 345, 1365, 460)) {
                 controller.onPrevious(); return true;
             }
-            if (inside(x, y, 1139, 690, 1389, 860) || inside(x, y, 1518, 345, 1600, 460)) {
+            if (inside(x, y, 1518, 345, 1600, 460)) {
                 controller.onNext(); return true;
-            }
-            if (inside(x, y, 652, 690, 925, 860)) {
-                controller.onPlayPause(); return true;
-            }
-            if (inside(x, y, 927, 690, 1140, 860)) {
-                controller.onStopPlayback(); return true;
             }
             if (inside(x, y, 1270, 214, 1608, 343)) {
                 controller.onBrowse(true); return true;

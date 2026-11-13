@@ -203,7 +203,7 @@ public final class MainActivity extends Activity implements WalkmanView.Controll
                         (d, n) -> {
                             if (n == 0) onBrowse(false);
                             else if (n == 1) onBrowse(true);
-                            else new AlertDialog.Builder(this).setTitle("Evadio 0.5")
+                            else new AlertDialog.Builder(this).setTitle("Evadio 0.6")
                                     .setMessage("Walkman-skin met dynamisch cassettelabel, " +
                                             "draaiende spoelen en live internetstreaming.")
                                     .setPositiveButton("OK", null).show();
