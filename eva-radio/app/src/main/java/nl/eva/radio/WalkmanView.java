@@ -11,6 +11,8 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import java.util.HashMap;
+import java.util.Map;
 import android.os.SystemClock;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
@@ -45,6 +47,8 @@ public final class WalkmanView extends View {
     private boolean playing;
     private boolean buffering;
     private int favorites;
+    private int batteryLevel = -1;
+    private final Map<String, Bitmap> dotCache = new HashMap<>();
     private float volumeFraction = 0.65f;
     private float angle = 0f;
     private long lastAnimation = SystemClock.uptimeMillis();
@@ -80,6 +84,10 @@ public final class WalkmanView extends View {
     }
 
     public void setFavoritesCount(int count) { favorites = count; invalidate(); }
+    public void setBatteryLevel(int percent) {
+        int level = Math.max(0, Math.min(100, percent));
+        if (batteryLevel != level) { batteryLevel = level; invalidate(); }
+    }
     public void setVolume(float fraction) {
         volumeFraction = Math.max(0f, Math.min(1f, fraction));
         invalidate();
@@ -151,35 +159,83 @@ public final class WalkmanView extends View {
         return value;
     }
 
+
+    // Lichtpuntjes zijn voorgemonteerd in een kleine bitmap; bij de draaiende
+    // spoelen hoeft het font daardoor niet 30 keer per seconde opnieuw opgebouwd.
+    private Bitmap dotRaster(String label, int tone) {
+        String key = label + ":" + tone;
+        Bitmap cached = dotCache.get(key);
+        if (cached != null && !cached.isRecycled()) return cached;
+        if (dotCache.size() > 45) dotCache.clear();
+        Paint letters = new Paint();
+        letters.setAntiAlias(false);
+        letters.setColor(Color.WHITE);
+        letters.setTypeface(Typeface.create("monospace", Typeface.BOLD));
+        letters.setTextSize(14f);
+        int width = Math.max(1, (int) Math.ceil(letters.measureText(label)) + 3);
+        Bitmap source = Bitmap.createBitmap(width, 18, Bitmap.Config.ARGB_8888);
+        Canvas sc = new Canvas(source);
+        sc.drawText(label, 0, 14, letters);
+        int pitch = 3;
+        Bitmap dots = Bitmap.createBitmap(width * pitch, 18 * pitch, Bitmap.Config.ARGB_8888);
+        Canvas dc = new Canvas(dots);
+        Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG);
+        glow.setColor(tone);
+        for (int yy = 0; yy < 18; yy++) {
+            for (int xx = 0; xx < width; xx++) {
+                if (Color.alpha(source.getPixel(xx, yy)) > 100) {
+                    dc.drawCircle(xx * pitch + 1.5f, yy * pitch + 1.5f, 1.12f, glow);
+                }
+            }
+        }
+        source.recycle();
+        dotCache.put(key, dots);
+        return dots;
+    }
+
+    private void dotText(Canvas c, String label, float x, float top, float maxWidth, int tone) {
+        Bitmap dots = dotRaster(label.toUpperCase(java.util.Locale.ROOT), tone);
+        float scale = Math.min(1f, maxWidth / dots.getWidth());
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        c.drawBitmap(dots, null, new RectF(x, top, x + dots.getWidth() * scale,
+                top + dots.getHeight() * scale), p);
+    }
+
     private void drawDisplay(Canvas c) {
-        // De echte zendernaam vervangt de tekst die eerder op de foto stond.
-        paint.reset(); paint.setAntiAlias(true);
-        paint.setColor(Color.rgb(27, 20, 18));
-        c.drawRoundRect(new RectF(697, 103, 1045, 165), 5, 5, paint);
-        paint.setTypeface(Typeface.create("monospace", Typeface.BOLD));
-        paint.setColor(Color.rgb(245, 193, 130));
-        paint.setShadowLayer(4, 0, 0, Color.rgb(100, 46, 17));
-        fitted(c, station, 711, 150, 322, 37, 17, paint);
-        paint.clearShadowLayer();
-        // Het percentage rechts vervangt de vaste batterijaanduiding op de foto.
-        paint.setColor(0xff181517);
-        c.drawRoundRect(new RectF(1252, 94, 1575, 168), 6, 6, paint);
-        paint.setTypeface(Typeface.create("monospace", Typeface.BOLD));
-        paint.setTextSize(38);
-        paint.setColor(0xffdfefbf);
-        c.drawText("VOL " + Math.round(volumeFraction * 100f) + "%", 1280, 145, paint);
-        // LIVE-sticker heeft een echte status: verbinden, live of pauze.
-        paint.setColor(Color.rgb(31, 16, 15));
-        c.drawRoundRect(new RectF(1109, 103, 1218, 162), 6, 6, paint);
-        String flag = buffering ? "···" : (playing ? "LIVE" : "PAUZE");
-        paint.setTypeface(Typeface.create("monospace", Typeface.BOLD));
-        paint.setTextSize(27);
-        paint.setColor(playing ? Color.rgb(255, 91, 55) : Color.rgb(241, 180, 118));
-        c.drawText(flag, 1117, 140, paint);
-        paint.setStyle(Paint.Style.STROKE); paint.setStrokeWidth(2.5f);
-        paint.setColor(playing ? Color.rgb(208, 54, 40) : Color.rgb(113, 88, 65));
-        c.drawRoundRect(new RectF(1111, 103, 1212, 159), 7, 7, paint);
+        // Donkere LCD-inleg laat de bestaande metalen en glazen displayrand staan.
+        paint.reset();
+        paint.setAntiAlias(true);
+        paint.setColor(0xff1b1412);
+        c.drawRoundRect(new RectF(682, 93, 1585, 170), 7, 7, paint);
+        paint.setColor(0x22856843);
+        c.drawLine(686, 167, 1582, 167, paint);
+        String label = station == null ? "" : station;
+        if (label.length() > 34) label = label.substring(0, 33) + "…";
+        dotText(c, label, 701, 106, 379, 0xffefbe81);
+
+        String flag = buffering ? "..." : (playing ? "LIVE" :
+                ("Gestopt".equalsIgnoreCase(status) ? "STOP" : "PAUZE"));
+        dotText(c, flag, 1103, 110, 108,
+                playing ? 0xffff845a : 0xffd8ac84);
+        dotText(c, "VOL " + Math.round(volumeFraction * 100f) + "%", 1212, 110, 184,
+                0xffe1ca93);
+
+        // Actuele Android-batterij: 4 horizontaal aaneengesloten lichtstaafjes.
+        float left = 1413f, top = 118f;
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2f);
+        paint.setColor(0xffb1c88b);
+        c.drawRoundRect(new RectF(left, top, left + 65, top + 29), 3, 3, paint);
         paint.setStyle(Paint.Style.FILL);
+        c.drawRoundRect(new RectF(left + 66, top + 8, left + 71, top + 22), 1, 1, paint);
+        int bars = batteryLevel < 0 ? 0 : (int) Math.ceil(batteryLevel / 25f);
+        for (int bar = 0; bar < 4; bar++) {
+            paint.setColor(bar < bars ? 0xffb8d292 : 0xff39432d);
+            float x = left + 5 + bar * 15;
+            c.drawRoundRect(new RectF(x, top + 5, x + 11, top + 24), 1, 1, paint);
+        }
+        dotText(c, batteryLevel < 0 ? "--%" : batteryLevel + "%",
+                1490, 109, 88, 0xffbbd59a);
     }
 
     private void drawCassetteLabel(Canvas c) {
@@ -210,7 +266,6 @@ private void drawVolume(Canvas c) {
         paint.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
         paint.setTextSize(19f);
         paint.setColor(0xffc9b9a4);
-        c.drawText("VOLUME", 1317, 539, paint);
         // Vuil, in de behuizing verzonken metalen sleuf.
         paint.setColor(0xff0b0909);
         c.drawRoundRect(new RectF(1327, 556, 1572, 579), 9, 9, paint);
@@ -240,43 +295,50 @@ private void drawVolume(Canvas c) {
         c.drawLine(knob, 545, knob, 583, paint);
     }
 
+
     private void drawEject(Canvas c) {
-        // Reële touchzone links naast de transportknoppen.
+        // De vijfde knop sluit aan op de originele transportknoppen;
+        // hetzelfde metallic oppervlak, dezelfde basishoogte en schaduw.
         paint.reset(); paint.setAntiAlias(true);
         paint.setColor(0xff0c0b0b);
-        c.drawRoundRect(new RectF(150, 706, 401, 853), 20, 20, paint);
+        c.drawRoundRect(new RectF(1370, 699, 1613, 856), 18, 18, paint);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(4f);
-        paint.setColor(0xff58514b);
-        c.drawRoundRect(new RectF(154, 710, 397, 849), 20, 20, paint);
+        paint.setStrokeWidth(3f);
+        paint.setColor(0xff4b4440);
+        c.drawRoundRect(new RectF(1373, 702, 1610, 854), 18, 18, paint);
         paint.setStyle(Paint.Style.FILL);
-        paint.setShader(new LinearGradient(165, 720, 165, 835,
-                new int[]{0xffc2bab0, 0xff77736e, 0xffa59b8e, 0xff4b4641},
+        paint.setColor(0xff0a090a);
+        c.drawRoundRect(new RectF(1383, 710, 1601, 845), 16, 16, paint);
+        paint.setShader(new LinearGradient(1392, 717, 1392, 829,
+                new int[]{0xffded5c9, 0xffb6aea4, 0xff938b82, 0xffc2b6a7, 0xff716b63},
                 null, Shader.TileMode.CLAMP));
-        c.drawRoundRect(new RectF(171, 720, 381, 838), 15, 15, paint);
+        c.drawRoundRect(new RectF(1391, 717, 1593, 832), 13, 13, paint);
         paint.setShader(null);
-        // Klassieke eject-driehoek boven een dunne liggende streep.
-        paint.setColor(0xff26221f);
-        Path triangle = new Path();
-        triangle.moveTo(247, 750); triangle.lineTo(269, 776);
-        triangle.lineTo(225, 776); triangle.close();
-        c.drawPath(triangle, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2f);
+        paint.setColor(0xffe3d9cb);
+        c.drawLine(1403, 721, 1580, 721, paint);
+        paint.setColor(0xff524a42);
+        c.drawLine(1403, 830, 1580, 830, paint);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(0xff282521);
+        Path icon = new Path();
+        icon.moveTo(1492, 743); icon.lineTo(1518, 777);
+        icon.lineTo(1466, 777); icon.close();
+        c.drawPath(icon, paint);
         paint.setStrokeWidth(5f);
-        c.drawLine(221, 784, 274, 784, paint);
+        c.drawLine(1463, 786, 1521, 786, paint);
         paint.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
-        paint.setTextSize(25);
-        c.drawText("EJECT", 211, 816, paint);
+        paint.setTextSize(23f);
+        c.drawText("EJECT", 1457, 815, paint);
     }
 
 
     private void drawFavoriteCount(Canvas c) {
+        // Onder Favorites alleen het label; geen teller op de cassettebehuizing.
         paint.reset(); paint.setAntiAlias(true);
         paint.setColor(0xff211c1c);
-        c.drawRoundRect(new RectF(1390, 282, 1504, 306), 4, 4, paint);
-        paint.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
-        paint.setTextSize(20);
-        paint.setColor(0xffd5c7b8);
-        c.drawText(favorites + " opgeslagen", 1396, 303, paint);
+        c.drawRoundRect(new RectF(1386, 280, 1551, 315), 5, 5, paint);
     }
 
     private boolean inside(float x, float y, float left, float top, float right, float bottom) {
@@ -311,7 +373,7 @@ private void drawVolume(Canvas c) {
             }
             performClick();
             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
-            if (inside(x, y, 150, 706, 401, 853)) {
+            if (inside(x, y, 1384, 704, 1606, 852)) {
                 controller.onEject(); return true;
             }
             if (inside(x, y, 427, 690, 654, 860) || inside(x, y, 1284, 345, 1365, 460)) {

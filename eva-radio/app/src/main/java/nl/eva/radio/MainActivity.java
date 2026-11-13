@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.view.View;
@@ -41,6 +42,21 @@ public final class MainActivity extends Activity implements WalkmanView.Controll
     private boolean buffering;
     private boolean registered;
     private AudioManager audio;
+    private boolean batteryReceiverRegistered;
+
+    private final BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            setBatteryFromIntent(intent);
+        }
+    };
+
+    private void setBatteryFromIntent(Intent intent) {
+        if (intent == null || walkman == null) return;
+        int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+        if (level >= 0 && scale > 0)
+            walkman.setBatteryLevel(Math.round(100f * level / scale));
+    }
 
     private final BroadcastReceiver stateReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) {
@@ -68,6 +84,7 @@ public final class MainActivity extends Activity implements WalkmanView.Controll
         refreshSelected();
         refreshFavorites();
         refreshVolume();
+        setBatteryFromIntent(registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED)));
         repository.search("NL", "", new StationRepository.Callback() {
             @Override public void onResult(List<Station> results) {
                 runOnUiThread(() -> { stations.clear(); stations.addAll(results); });
@@ -108,16 +125,21 @@ public final class MainActivity extends Activity implements WalkmanView.Controll
             registerReceiver(stateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         else registerReceiver(stateReceiver, filter);
         registered = true;
+        setBatteryFromIntent(registerReceiver(batteryReceiver,
+                new IntentFilter(Intent.ACTION_BATTERY_CHANGED)));
+        batteryReceiverRegistered = true;
         startService(new Intent(this, RadioService.class).setAction(RadioService.STATUS));
     }
 
     @Override protected void onResume() {
         super.onResume();
         refreshSelected(); refreshFavorites(); refreshVolume();
+        setBatteryFromIntent(registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED)));
     }
 
     @Override protected void onStop() {
         if (registered) { unregisterReceiver(stateReceiver); registered = false; }
+        if (batteryReceiverRegistered) { unregisterReceiver(batteryReceiver); batteryReceiverRegistered = false; }
         super.onStop();
     }
 
@@ -181,7 +203,7 @@ public final class MainActivity extends Activity implements WalkmanView.Controll
                         (d, n) -> {
                             if (n == 0) onBrowse(false);
                             else if (n == 1) onBrowse(true);
-                            else new AlertDialog.Builder(this).setTitle("Evadio 0.4")
+                            else new AlertDialog.Builder(this).setTitle("Evadio 0.5")
                                     .setMessage("Walkman-skin met dynamisch cassettelabel, " +
                                             "draaiende spoelen en live internetstreaming.")
                                     .setPositiveButton("OK", null).show();
