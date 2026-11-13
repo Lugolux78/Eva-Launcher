@@ -27,6 +27,7 @@ public final class WalkmanView extends View {
     public interface Controller {
         void onPlayPause();
         void onStopPlayback();
+        void onEject();
         void onNext();
         void onPrevious();
         void onBrowse(boolean favorites);
@@ -108,7 +109,7 @@ public final class WalkmanView extends View {
             angle = (angle + dt * 0.32f) % 360f;
             lastAnimation = now;
             reel(c, leftWheel, 684, 465, angle);
-            reel(c, rightWheel, 990, 465, -angle);
+            reel(c, rightWheel, 990, 465, angle);
             // Alleen tijdens afspelen renderen we nieuwe frames.
             postInvalidateDelayed(32);
         } else {
@@ -119,6 +120,7 @@ public final class WalkmanView extends View {
         drawCassetteLabel(c);
         drawVolume(c);
         drawFavoriteCount(c);
+        drawEject(c);
         c.restore();
     }
 
@@ -159,6 +161,13 @@ public final class WalkmanView extends View {
         paint.setShadowLayer(4, 0, 0, Color.rgb(100, 46, 17));
         fitted(c, station, 711, 150, 322, 37, 17, paint);
         paint.clearShadowLayer();
+        // Het percentage rechts vervangt de vaste batterijaanduiding op de foto.
+        paint.setColor(0xff181517);
+        c.drawRoundRect(new RectF(1252, 94, 1575, 168), 6, 6, paint);
+        paint.setTypeface(Typeface.create("monospace", Typeface.BOLD));
+        paint.setTextSize(38);
+        paint.setColor(0xffdfefbf);
+        c.drawText("VOL " + Math.round(volumeFraction * 100f) + "%", 1280, 145, paint);
         // LIVE-sticker heeft een echte status: verbinden, live of pauze.
         paint.setColor(Color.rgb(31, 16, 15));
         c.drawRoundRect(new RectF(1109, 103, 1218, 162), 6, 6, paint);
@@ -187,28 +196,78 @@ public final class WalkmanView extends View {
         c.restore();
     }
 
-    private void drawVolume(Canvas c) {
-        // Overschilder de vaste volumeknop van de achtergrondfoto.
+private void drawVolume(Canvas c) {
+        // Mechanische volumeschuif met geribbeld aluminium en schaal 0-10.
         paint.reset(); paint.setAntiAlias(true);
-        paint.setColor(0xff211b1a);
-        c.drawRoundRect(new RectF(1312, 528, 1583, 607), 16f, 16f, paint);
-        paint.setColor(0xff0c0b0b);
-        c.drawRoundRect(new RectF(1325, 546, 1569, 570), 10f, 10f, paint);
-        paint.setColor(0xffed7f26);
-        c.drawRoundRect(new RectF(1328, 550, 1328 + 239 * volumeFraction, 566), 8, 8, paint);
-        float knob = 1329 + 238 * volumeFraction;
-        paint.setShader(new LinearGradient(knob - 28, 520, knob + 25, 594,
-                new int[]{0xffded2c9, 0xff736763, 0xffb6a7a0, 0xff3b3635},
+        paint.setColor(0xff1d1a19);
+        c.drawRoundRect(new RectF(1302, 523, 1592, 616), 14, 14, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2f);
+        paint.setColor(0xff5f5149);
+        c.drawRoundRect(new RectF(1305, 526, 1589, 613), 14, 14, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        paint.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
+        paint.setTextSize(19f);
+        paint.setColor(0xffc9b9a4);
+        c.drawText("VOLUME", 1317, 539, paint);
+        // Vuil, in de behuizing verzonken metalen sleuf.
+        paint.setColor(0xff0b0909);
+        c.drawRoundRect(new RectF(1327, 556, 1572, 579), 9, 9, paint);
+        paint.setColor(0xff3a2b23);
+        c.drawRoundRect(new RectF(1331, 560, 1568, 574), 6, 6, paint);
+        paint.setColor(0xffe58332);
+        c.drawRoundRect(new RectF(1331, 561, 1331 + 235 * volumeFraction, 573), 6, 6, paint);
+
+        for (int i = 0; i <= 10; i++) {
+            float mark = 1331f + 23.5f * i;
+            paint.setColor(i == 0 || i == 5 || i == 10 ? 0xffc9b7a3 : 0xff7e7167);
+            paint.setStrokeWidth(i % 5 == 0 ? 2.5f : 1.2f);
+            c.drawLine(mark, 585, mark, i % 5 == 0 ? 598 : 593, paint);
+        }
+        // Analoge, geribbelde metalen duimknop.
+        float knob = 1331 + 235 * volumeFraction;
+        paint.setShader(new LinearGradient(knob - 24, 548, knob + 25, 585,
+                new int[]{0xfff1e4d0, 0xff8a827b, 0xffdad2c7, 0xff544c47},
                 null, Shader.TileMode.CLAMP));
-        c.drawRoundRect(new RectF(knob - 29, 528, knob + 29, 590), 12, 12, paint);
+        c.drawRoundRect(new RectF(knob - 25, 543, knob + 25, 586), 7, 7, paint);
         paint.setShader(null);
-        paint.setColor(0x9b211c1b);
-        for (int i = -17; i <= 17; i += 6) c.drawLine(knob + i, 536, knob + i, 581, paint);
-        paint.setColor(Color.rgb(211, 198, 185));
-        paint.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
-        paint.setTextSize(21);
-        c.drawText(Math.round(volumeFraction * 100) + "%", 1517, 607, paint);
+        paint.setColor(0xff39312c);
+        paint.setStrokeWidth(1.7f);
+        for (int i = -18; i <= 18; i += 5)
+            c.drawLine(knob + i, 548, knob + i, 581, paint);
+        paint.setColor(0xfff0e4d0);
+        c.drawLine(knob, 545, knob, 583, paint);
     }
+
+    private void drawEject(Canvas c) {
+        // Reële touchzone links naast de transportknoppen.
+        paint.reset(); paint.setAntiAlias(true);
+        paint.setColor(0xff0c0b0b);
+        c.drawRoundRect(new RectF(150, 706, 401, 853), 20, 20, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(4f);
+        paint.setColor(0xff58514b);
+        c.drawRoundRect(new RectF(154, 710, 397, 849), 20, 20, paint);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setShader(new LinearGradient(165, 720, 165, 835,
+                new int[]{0xffc2bab0, 0xff77736e, 0xffa59b8e, 0xff4b4641},
+                null, Shader.TileMode.CLAMP));
+        c.drawRoundRect(new RectF(171, 720, 381, 838), 15, 15, paint);
+        paint.setShader(null);
+        // Klassieke eject-driehoek boven een dunne liggende streep.
+        paint.setColor(0xff26221f);
+        Path triangle = new Path();
+        triangle.moveTo(247, 750); triangle.lineTo(269, 776);
+        triangle.lineTo(225, 776); triangle.close();
+        c.drawPath(triangle, paint);
+        paint.setStrokeWidth(5f);
+        c.drawLine(221, 784, 274, 784, paint);
+        paint.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
+        paint.setTextSize(25);
+        c.drawText("EJECT", 211, 816, paint);
+    }
+
 
     private void drawFavoriteCount(Canvas c) {
         paint.reset(); paint.setAntiAlias(true);
@@ -252,6 +311,9 @@ public final class WalkmanView extends View {
             }
             performClick();
             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            if (inside(x, y, 150, 706, 401, 853)) {
+                controller.onEject(); return true;
+            }
             if (inside(x, y, 427, 690, 654, 860) || inside(x, y, 1284, 345, 1365, 460)) {
                 controller.onPrevious(); return true;
             }
