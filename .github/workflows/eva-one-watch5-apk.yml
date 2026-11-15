@@ -1,0 +1,42 @@
+name: Build EVA One Watch5 APK
+on:
+  push:
+    branches: [eva-one-watch5-apk-build]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Python for image assets
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Gradle 8.10.2
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Android platform
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Generate watch face images
+        run: |
+          python -m pip install Pillow
+          python eva-one/generate_assets.py
+      - name: Compile signed debug APK
+        run: gradle --no-daemon --project-dir eva-one :watchface:assembleDebug --stacktrace
+      - name: Upload downloadable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: EVA-One-Watch5-APK
+          path: eva-one/watchface/build/outputs/apk/debug/watchface-debug.apk
+          if-no-files-found: error
