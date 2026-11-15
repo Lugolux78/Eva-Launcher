@@ -27,7 +27,7 @@ jobs:
       - name: Android platform
         run: |
           echo "Using Android SDK: $ANDROID_HOME"
-          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-35" "build-tools;35.0.0"
       - name: Generate watch face images
         run: |
           python -m pip install Pillow
