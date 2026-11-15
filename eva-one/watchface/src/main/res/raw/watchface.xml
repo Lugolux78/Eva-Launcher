@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WatchFace width="450" height="450">
+  <Scene>
+    <PartImage x="0" y="0" width="450" height="450">
+      <Variant mode="AMBIENT" target="alpha" value="0" />
+      <Image resource="dial" />
+    </PartImage>
+    <PartDraw x="0" y="0" width="450" height="450">
+      <Variant mode="AMBIENT" target="alpha" value="0" />
+      <Arc centerX="225" centerY="225" width="412" height="412" startAngle="15" endAngle="65">
+        <Stroke color="#3FF4AE" thickness="5" cap="ROUND"/>
+      </Arc>
+      <Arc centerX="225" centerY="225" width="412" height="412" startAngle="225" endAngle="257">
+        <Stroke color="#3FF4AE" thickness="5" cap="ROUND"/>
+      </Arc>
+      <Arc centerX="138" centerY="273" width="90" height="90" startAngle="0" endAngle="0">
+        <Transform target="endAngle" value="[BATTERY_PERCENT] * 3.6"/>
+        <Stroke color="#3FF4AE" thickness="6" cap="ROUND"/>
+      </Arc>
+      <Arc centerX="312" centerY="273" width="90" height="90" startAngle="0" endAngle="0">
+        <Transform target="endAngle" value="[STEP_PERCENT] * 3.6"/>
+        <Stroke color="#3FF4AE" thickness="6" cap="ROUND"/>
+      </Arc>
+      <Arc centerX="138" centerY="369" width="90" height="90" startAngle="315" endAngle="145">
+        <Stroke color="#19D88C" thickness="5" cap="ROUND"/>
+      </Arc>
+      <Arc centerX="312" centerY="369" width="90" height="90" startAngle="315" endAngle="145">
+        <Stroke color="#19D88C" thickness="5" cap="ROUND"/>
+      </Arc>
+    </PartDraw>
+    <PartText x="100" y="70" width="250" height="32">
+      <Variant mode="AMBIENT" target="alpha" value="0"/>
+      <Text align="CENTER"><Font family="SYNC_TO_DEVICE" size="19" color="#D4EBE2">
+        <Template>%s %d %s<Parameter expression="[DAY_OF_WEEK_S]"/><Parameter expression="[DAY]"/><Parameter expression="[MONTH_S]"/></Template>
+      </Font></Text>
+    </PartText>
+    <DigitalClock x="30" y="113" width="390" height="92">
+      <TimeText x="0" y="0" width="390" height="92" format="hh:mm" hourFormat="24" align="CENTER">
+        <Font family="SYNC_TO_DEVICE" size="79" weight="BOLD" color="#FFFFFF"/>
+      </TimeText>
+    </DigitalClock>
+    <PartText x="92" y="265" width="92" height="29">
+      <Variant mode="AMBIENT" target="alpha" value="0"/>
+      <Text align="CENTER"><Font family="SYNC_TO_DEVICE" size="23" color="#FFFFFF">
+        <Template>%d%%<Parameter expression="[BATTERY_PERCENT]"/></Template>
+      </Font></Text>
+      <Launch target="BATTERY_STATUS"/>
+    </PartText>
+    <PartText x="264" y="265" width="96" height="29">
+      <Variant mode="AMBIENT" target="alpha" value="0"/>
+      <Text align="CENTER"><Font family="SYNC_TO_DEVICE" size="22" color="#FFFFFF">
+        <Template>%d<Parameter expression="[STEP_COUNT]"/></Template>
+      </Font></Text>
+    </PartText>
+    <PartText x="92" y="361" width="92" height="30">
+      <Variant mode="AMBIENT" target="alpha" value="0"/>
+      <Text align="CENTER"><Font family="SYNC_TO_DEVICE" size="23" color="#FFFFFF">
+        <Template>%d<Parameter expression="round([HEART_RATE])"/></Template>
+      </Font></Text>
+      <Launch target="HEALTH_HEART_RATE"/>
+    </PartText>
+    <Condition>
+      <Expressions><Expression name="weather_ok">[WEATHER.IS_AVAILABLE]</Expression></Expressions>
+      <Compare expression="weather_ok">
+        <PartText x="265" y="361" width="94" height="30">
+          <Variant mode="AMBIENT" target="alpha" value="0"/>
+          <Text align="CENTER"><Font family="SYNC_TO_DEVICE" size="23" color="#FFFFFF">
+            <Template>%d°<Parameter expression="[WEATHER.TEMPERATURE]"/></Template>
+          </Font></Text>
+        </PartText>
+      </Compare>
+      <Default>
+        <PartText x="265" y="361" width="94" height="30">
+          <Variant mode="AMBIENT" target="alpha" value="0"/>
+          <Text align="CENTER"><Font family="SYNC_TO_DEVICE" size="23" color="#FFFFFF">--</Font></Text>
+        </PartText>
+      </Default>
+    </Condition>
+    <PartText x="96" y="296" width="85" height="17"><Variant mode="AMBIENT" target="alpha" value="0"/><Text align="CENTER"><Font family="SYNC_TO_DEVICE" size="11" color="#82948E">BAT</Font></Text></PartText>
+    <PartText x="267" y="296" width="90" height="17"><Variant mode="AMBIENT" target="alpha" value="0"/><Text align="CENTER"><Font family="SYNC_TO_DEVICE" size="11" color="#82948E">STEPS</Font></Text></PartText>
+    <PartText x="96" y="392" width="85" height="17"><Variant mode="AMBIENT" target="alpha" value="0"/><Text align="CENTER"><Font family="SYNC_TO_DEVICE" size="11" color="#82948E">BPM</Font></Text></PartText>
+    <PartText x="267" y="392" width="90" height="17"><Variant mode="AMBIENT" target="alpha" value="0"/><Text align="CENTER"><Font family="SYNC_TO_DEVICE" size="11" color="#82948E">WEER</Font></Text></PartText>
+  </Scene>
+</WatchFace>
